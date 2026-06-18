@@ -1,0 +1,2412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>AC Generator — Interactive Physics Lab</title>
+<meta name="description" content="Interactive AC Generator simulation for Class 9 Physics. Explore electromagnetic induction with 3D visualization, live graphs, formulas, and quizzes.">
+
+<!-- ═══════════════════════════════════════════════════════════════
+     GOOGLE FONTS — Inter for UI, JetBrains Mono for numerical data
+     ═══════════════════════════════════════════════════════════════ -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   RESET & CSS CUSTOM PROPERTIES (Design Tokens)
+   ═══════════════════════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  color-scheme: dark;
+
+  /* — Background Palette — */
+  --bg-deep:    #090d16;
+  --bg-panel:   #111827;
+  --bg-card:    #1a2236;
+  --bg-card-2:  #0f1729;
+  --bg-hover:   #1e2d4a;
+
+  /* — Border & Surface — */
+  --border-subtle: rgba(255, 255, 255, 0.05);
+  --border-light:  rgba(255, 255, 255, 0.10);
+  --border-accent: rgba(251, 191, 36, 0.45);
+
+  /* — Typography — */
+  --text-primary:   #f1f5f9;
+  --text-secondary:  #94a3b8;
+  --text-muted:      #64748b;
+
+  /* — Accent Colors — */
+  --gold:     #fbbf24;
+  --gold-dim: rgba(251, 191, 36, 0.15);
+  --cyan:     #22d3ee;
+  --magenta:  #f472b6;
+  --green:    #4ade80;
+  --red:      #f87171;
+  --blue:     #60a5fa;
+  --purple:   #a78bfa;
+
+  /* — Spacing — */
+  --gap: clamp(8px, 1vw, 12px);
+  --radius: 12px;
+  --radius-sm: 8px;
+
+  /* — Header height — */
+  --header-h: 60px;
+}
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  width: 100%;
+  min-height: 100vh;
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  font-family: 'Inter', 'Segoe UI', Roboto, system-ui, -apple-system, sans-serif;
+  overflow-y: auto;
+  overflow-x: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   STICKY HEADER — App Title + Simulation / Quiz Tab Switcher
+   ═══════════════════════════════════════════════════════════════ */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--header-h);
+  padding: 0 clamp(14px, 3vw, 28px);
+  background: linear-gradient(180deg, rgba(9,13,22,0.97) 0%, rgba(9,13,22,0.92) 100%);
+  backdrop-filter: blur(16px) saturate(1.4);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.app-header__title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.app-header__title h1 {
+  font-size: clamp(14px, 2.2vw, 20px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.app-header__title .badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--gold-dim);
+  border: 1px solid rgba(251,191,36,0.25);
+  color: var(--gold);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+
+/* — Language Switch — */
+.lang-switch-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 12px;
+}
+.lang-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+.lang-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+}
+.lang-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.lang-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: rgba(255,255,255,0.1);
+  transition: .3s;
+  border-radius: 24px;
+  border: 1px solid var(--border-subtle);
+}
+.lang-slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 2px;
+  bottom: 2px;
+  background-color: var(--gold);
+  transition: .3s;
+  border-radius: 50%;
+}
+.lang-switch input:checked + .lang-slider {
+  background-color: rgba(251, 191, 36, 0.2);
+}
+.lang-switch input:checked + .lang-slider:before {
+  transform: translateX(20px);
+}
+
+/* — Tab Switcher — */
+.tab-switcher {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border-subtle);
+}
+
+.tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  min-height: 38px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text-secondary);
+  font: 600 clamp(12px, 1.4vw, 14px)/1 'Inter', sans-serif;
+  cursor: pointer;
+  transition: all 0.22s ease;
+  white-space: nowrap;
+}
+
+.tab-btn:hover {
+  color: var(--text-primary);
+  background: rgba(255,255,255,0.05);
+}
+
+.tab-btn.active {
+  background: rgba(251, 191, 36, 0.14);
+  color: #fff;
+  box-shadow: 0 0 12px rgba(251,191,36,0.08);
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   MASTER LAYOUT — 3-Column Desktop Grid / Stacked Mobile
+   ═══════════════════════════════════════════════════════════════ */
+.app-body {
+  width: 100%;
+  max-width: 1760px;
+  margin: 0 auto;
+  padding: var(--gap);
+}
+
+/* — Simulation View — */
+.sim-view {
+  display: grid;
+  gap: var(--gap);
+  align-items: start;
+}
+
+/* Desktop 3-column */
+@media (min-width: 1025px) {
+  .sim-view {
+    grid-template-columns: 1fr 2fr 1fr;   /* 25% | 50% | 25% */
+    grid-template-areas: "controls visual telemetry";
+    align-items: stretch;
+    height: calc(100vh - var(--header-h) - var(--gap) * 2);
+  }
+  .col-controls  { grid-area: controls; height: 100%; overflow-y: auto; justify-content: flex-start; }
+  .col-visual    { grid-area: visual; height: 100%; overflow: hidden; }
+  .col-telemetry { grid-area: telemetry; height: 100%; overflow-y: auto; }
+}
+
+/* Mobile / Tablet — stacked: visual first, then controls, then telemetry */
+@media (max-width: 1024px) {
+  .sim-view {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "visual"
+      "controls"
+      "telemetry";
+  }
+  .col-controls  { grid-area: controls; }
+  .col-visual    { grid-area: visual; }
+  .col-telemetry { grid-area: telemetry; }
+}
+
+/* Column wrappers */
+.col-controls, .col-visual, .col-telemetry {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+  min-width: 0;
+}
+
+/* Columns adapt cleanly without clipping */
+@media (min-width: 1025px) {
+  .col-controls, .col-telemetry {
+    /* Allowed to expand with grid, page will scroll normally */
+  }
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   PANEL — Shared glassmorphism card style
+   ═══════════════════════════════════════════════════════════════ */
+.panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.panel-pad {
+  padding: clamp(10px, 1.2vw, 14px);
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   LEFT COLUMN — CONTROL CENTER
+   ═══════════════════════════════════════════════════════════════ */
+.section-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: clamp(11px, 1.2vw, 13px);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  margin-bottom: 14px;
+}
+
+.section-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border-subtle);
+}
+
+/* — Control Card (slider) — */
+.ctrl-card {
+  padding: clamp(10px, 1.2vw, 14px);
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  transition: border-color 0.2s;
+}
+
+.ctrl-card:hover {
+  border-color: var(--border-light);
+}
+
+.ctrl-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.ctrl-label {
+  font-size: clamp(12px, 1.3vw, 14px);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.ctrl-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: clamp(12px, 1.3vw, 14px);
+  font-weight: 700;
+  color: var(--gold);
+  white-space: nowrap;
+}
+
+/* — Range Slider — Custom styled for touch — */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 36px;           /* compact touch target */
+  background: transparent;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, rgba(251,191,36,0.25) 0%, rgba(251,191,36,0.08) 100%);
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--gold);
+  border: 3px solid var(--bg-deep);
+  margin-top: -8px;
+  box-shadow: 0 0 10px rgba(251,191,36,0.3);
+  transition: box-shadow 0.2s;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  box-shadow: 0 0 18px rgba(251,191,36,0.5);
+}
+
+input[type="range"]::-moz-range-track {
+  height: 6px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, rgba(251,191,36,0.25) 0%, rgba(251,191,36,0.08) 100%);
+  border: none;
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--gold);
+  border: 3px solid var(--bg-deep);
+  box-shadow: 0 0 10px rgba(251,191,36,0.3);
+}
+
+/* — Toggle Buttons — */
+.toggle-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.toggle-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 38px;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  font-size: clamp(12px, 1.3vw, 14px);
+  font-weight: 600;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.toggle-item:hover {
+  background: var(--bg-hover);
+}
+
+.toggle-item input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--gold);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.toggle-item--accent {
+  border-color: var(--border-accent);
+  background: var(--gold-dim);
+}
+
+/* — Resume Button — */
+.btn-resume {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  width: 100%;
+  border: 1px solid rgba(74, 222, 128, 0.4);
+  border-radius: var(--radius-sm);
+  background: rgba(74, 222, 128, 0.10);
+  color: #bbf7d0;
+  font: 700 clamp(13px, 1.4vw, 15px) 'Inter', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-resume:hover:not(:disabled) {
+  background: rgba(74, 222, 128, 0.18);
+  box-shadow: 0 0 16px rgba(74, 222, 128, 0.12);
+}
+
+.btn-resume:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.ctrl-note {
+  font-size: clamp(11px, 1.1vw, 12px);
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+/* — Readout Grid — */
+.readout-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+@media (max-width: 1024px) and (min-width: 600px) {
+  .readout-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 400px) {
+  .readout-grid { grid-template-columns: 1fr; }
+}
+
+.readout {
+  padding: clamp(10px, 1.2vw, 14px);
+  border-radius: var(--radius-sm);
+  background: var(--bg-card-2);
+  border: 1px solid var(--border-subtle);
+}
+
+.readout__label {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.readout__value {
+  display: block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: clamp(13px, 1.5vw, 16px);
+  font-weight: 700;
+  color: #fff;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   CENTER COLUMN — VISUAL CORE (3D Canvas + Dual Graphs)
+   ═══════════════════════════════════════════════════════════════ */
+.scene-panel {
+  overflow: hidden;
+  border-radius: var(--radius);
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+}
+
+#scene {
+  background: #080b10;
+  cursor: default;
+  touch-action: none;   /* prevent scroll while dragging */
+}
+
+#scene.can-drag { cursor: grab; }
+#scene.dragging { cursor: grabbing; }
+
+/* — Graph Stack — */
+.graph-stack {
+  overflow: hidden;
+}
+
+.graph-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: clamp(10px, 1.5vw, 14px) clamp(14px, 2vw, 20px);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.graph-header__title {
+  font-size: clamp(13px, 1.4vw, 15px);
+  font-weight: 800;
+  color: #fff;
+}
+
+.graph-header__sub {
+  font-size: clamp(11px, 1.1vw, 12px);
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.graph-canvas + .graph-canvas {
+  border-top: 1px solid var(--border-subtle);
+}
+
+/* — Legend Row — */
+.legend-row {
+  display: flex;
+  align-items: center;
+  gap: clamp(12px, 2vw, 20px);
+  padding: clamp(8px, 1vw, 12px) clamp(14px, 2vw, 20px);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.legend-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: clamp(11px, 1.1vw, 12px);
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.swatch {
+  width: 14px;
+  height: 8px;
+  border-radius: 999px;
+  box-shadow: 0 0 8px currentColor;
+}
+
+.swatch--cyan    { background: var(--cyan);    color: var(--cyan); }
+.swatch--magenta { background: var(--magenta); color: var(--magenta); }
+
+
+/* ═══════════════════════════════════════════════════════════════
+   RIGHT COLUMN — LIVE MATH & TELEMETRY
+   ═══════════════════════════════════════════════════════════════ */
+
+/* — Math Cards — */
+.math-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.math-card {
+  padding: clamp(12px, 1.5vw, 16px);
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+}
+
+.math-card__label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.math-card__eq {
+  font-size: clamp(13px, 1.4vw, 16px);
+  font-weight: 800;
+  color: var(--gold);
+  margin-bottom: 4px;
+}
+
+.math-card__sub {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: clamp(10px, 1.1vw, 12px);
+  font-weight: 500;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   PHASE INDICATOR TIMELINE (Milestone Telemetry Redesign)
+   ═══════════════════════════════════════════════════════════════ */
+.telemetry-card {
+  /* unified single card */
+}
+
+.telemetry-card__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.telemetry-card__title {
+  font-size: clamp(13px, 1.4vw, 15px);
+  font-weight: 800;
+  color: #fff;
+}
+
+/* — Phase Path Timeline (Interactive Stepper) — */
+.phase-path {
+  position: relative;
+  margin-bottom: 6px;
+  padding: 0 4px;
+}
+.phase-path-track {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  margin-bottom: 12px;
+}
+.phase-line {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--border-light);
+  z-index: 1;
+  transform: translateY(-50%);
+}
+.phase-node {
+  background: var(--bg-panel);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  z-index: 2;
+  padding: 0 4px;
+}
+.phase-node__dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--bg-card-2);
+  border: 2px solid var(--border-light);
+  transition: all 0.2s ease;
+  margin-bottom: 6px;
+}
+.phase-node.active .phase-node__dot, .phase-node:hover .phase-node__dot {
+  border-color: var(--gold);
+  background: var(--gold-dim);
+  box-shadow: 0 0 10px rgba(251,191,36,0.3);
+  transform: scale(1.25);
+}
+.phase-node__label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+  transition: color 0.2s;
+  font-family: 'Inter', sans-serif;
+}
+.phase-node.active .phase-node__label, .phase-node:hover .phase-node__label {
+  color: var(--gold);
+}
+.phase-path-desc {
+  font-size: clamp(11px, 1vw, 12px);
+  color: var(--text-secondary);
+  font-weight: 500;
+  text-align: center;
+  min-height: 38px;
+  line-height: 1.4;
+  padding: 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   QUIZ VIEW — Full-screen centered card layout
+   ═══════════════════════════════════════════════════════════════ */
+.quiz-view {
+  display: none;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: var(--gap);
+}
+
+.quiz-view.active { display: block; }
+.sim-view.hidden  { display: none; }
+
+.quiz-header {
+  text-align: center;
+  margin-bottom: clamp(20px, 3vw, 32px);
+}
+
+.quiz-header h2 {
+  font-size: clamp(20px, 3vw, 28px);
+  font-weight: 900;
+  color: #fff;
+  margin-bottom: 6px;
+}
+
+.quiz-header p {
+  font-size: clamp(13px, 1.4vw, 15px);
+  color: var(--text-secondary);
+}
+
+.quiz-list {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(14px, 2vw, 20px);
+}
+
+.quiz-card {
+  padding: clamp(16px, 2.5vw, 24px);
+  border-radius: var(--radius);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+}
+
+.quiz-question {
+  font-size: clamp(14px, 1.6vw, 16px);
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.45;
+  margin-bottom: 14px;
+}
+
+.quiz-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.quiz-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  background: var(--bg-card-2);
+  color: var(--text-primary);
+  font: 600 clamp(13px, 1.3vw, 14px) 'Inter', sans-serif;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.quiz-option:hover {
+  background: var(--bg-hover);
+  border-color: rgba(255,255,255,0.15);
+}
+
+.quiz-option.correct {
+  border-color: rgba(74, 222, 128, 0.6);
+  background: rgba(74, 222, 128, 0.10);
+}
+
+.quiz-option.correct::before {
+  content: "";
+  font-weight: 900;
+  color: var(--green);
+}
+
+.quiz-option.incorrect {
+  border-color: rgba(248, 113, 113, 0.6);
+  background: rgba(248, 113, 113, 0.08);
+}
+
+.quiz-option.incorrect::before {
+  content: "";
+  font-weight: 900;
+  color: var(--red);
+}
+
+.quiz-feedback {
+  margin-top: 10px;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  font-size: clamp(12px, 1.2vw, 13px);
+  font-weight: 500;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  min-height: 20px;
+}
+
+.quiz-feedback:empty { display: none; }
+
+.quiz-feedback.correct {
+  background: rgba(74, 222, 128, 0.06);
+  color: #bbf7d0;
+}
+
+.quiz-feedback.incorrect {
+  background: rgba(248, 113, 113, 0.06);
+  color: #fecaca;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   UTILITY — Scroll to top, etc
+   ═══════════════════════════════════════════════════════════════ */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 3px;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   RESPONSIVE TWEAKS
+   ═══════════════════════════════════════════════════════════════ */
+@media (max-width: 1024px) {
+  .app-header__title .badge { display: none; }
+}
+
+@media (max-width: 480px) {
+  .tab-btn { padding: 8px 10px; font-size: 11px; }
+}
+
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     STICKY HEADER — Title + Simulation / Quiz Tabs
+     ═══════════════════════════════════════════════════════════════ -->
+<header class="app-header" role="banner">
+  <div class="app-header__title">
+    <h1 id="appTitle">AC Generator Lab</h1>
+    <span class="badge" id="appBadge">Class 9 Physics</span>
+  </div>
+  <nav class="tab-switcher" role="tablist" aria-label="View modes">
+    <button class="tab-btn active" type="button" data-view="sim"  role="tab" aria-selected="true"  id="tab-sim">
+      <span id="tabSimText">Simulation</span>
+    </button>
+    <button class="tab-btn"        type="button" data-view="quiz" role="tab" aria-selected="false" id="tab-quiz">
+      <span id="tabQuizText">Quiz</span>
+    </button>
+    <div style="width: 1px; height: 24px; background: var(--border-light); margin: 0 8px;"></div>
+    <div class="lang-switch-wrapper">
+      <span class="lang-label" id="langLabelEn" style="color: #fff;">English</span>
+      <label class="lang-switch" aria-label="Toggle language">
+        <input type="checkbox" id="langToggleBtn">
+        <span class="lang-slider"></span>
+      </label>
+      <span class="lang-label" id="langLabelTa">தமிழ்</span>
+    </div>
+  </nav>
+</header>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     MAIN BODY — Contains both Simulation and Quiz views
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="app-body">
+
+  <!-- ─── SIMULATION VIEW ─── -->
+  <div class="sim-view" id="simView">
+
+    <!-- ════════════════════════════════════════════
+         LEFT COLUMN — Control Center
+         ════════════════════════════════════════════ -->
+    <aside class="col-controls">
+
+      <!-- Slider Controls -->
+      <section class="panel panel-pad" style="display: flex; flex-direction: column;">
+        <div class="section-label" id="lblControls">Controls</div>
+
+        <div style="display:flex; flex-direction:column; gap:24px; flex: 1; justify-content: center;">
+          <!-- Omega slider -->
+          <div class="ctrl-card">
+            <div class="ctrl-header">
+              <span class="ctrl-label" id="lblRot">Rotation ω</span>
+              <span id="omegaValue" class="ctrl-value">10.0 rad/s</span>
+            </div>
+            <input id="omegaSlider" type="range" min="0" max="10" value="10" step="0.1" aria-label="Rotation speed omega">
+          </div>
+
+          <!-- Field B slider -->
+          <div class="ctrl-card">
+            <div class="ctrl-header">
+              <span class="ctrl-label" id="lblField">Field B</span>
+              <span id="fieldValue" class="ctrl-value">0.30 T</span>
+            </div>
+            <input id="fieldSlider" type="range" min="0.10" max="0.30" value="0.30" step="0.01" aria-label="Magnetic field strength B">
+          </div>
+
+          <!-- Thickness slider -->
+          <div class="ctrl-card">
+            <div class="ctrl-header">
+              <span class="ctrl-label" id="lblThick">Wire Thickness</span>
+              <span id="thicknessValue" class="ctrl-value">2.0x</span>
+            </div>
+            <input id="thicknessSlider" type="range" min="1" max="5" value="2" step="0.1" aria-label="Coil wire thickness">
+          </div>
+        </div>
+      </section>
+
+      <!-- Toggles & Actions -->
+      <section class="panel panel-pad" style="display: flex; flex-direction: column; justify-content: center;">
+        <div class="section-label" id="lblOptions">Options</div>
+        <div class="toggle-row" style="gap: 14px;">
+          <label class="toggle-item"><input id="run" type="checkbox" checked> <span id="lblAutoRot">Auto Rotate</span></label>
+          <label class="toggle-item"><input id="vectors" type="checkbox" checked> <span id="lblVec">B, v, I Vectors</span></label>
+          <label class="toggle-item"><input id="labels" type="checkbox" checked> <span id="lblComp">Component Labels</span></label>
+          <label class="toggle-item toggle-item--accent"><input id="autoPause" type="checkbox"> <span id="lblAutoPause">Auto-Pause at Milestones</span></label>
+        </div>
+        <div style="margin-top:10px;">
+          <button id="resumeButton" class="btn-resume" type="button" disabled><span id="lblResume">Resume</span></button>
+        </div>
+        <p id="lblNote" class="ctrl-note" style="margin-top:18px;">Turn Auto Rotate off to drag the coil manually. Auto-pause snaps to 0°, 90°, 180°, or 270°.</p>
+      </section>
+
+    </aside>
+
+    <!-- ════════════════════════════════════════════
+         CENTER COLUMN — Visual Core
+         ════════════════════════════════════════════ -->
+    <section class="col-visual">
+
+      <!-- 3D Generator Canvas -->
+      <div class="panel scene-panel">
+        <canvas id="scene" width="1000" height="570" aria-label="3D AC generator simulation"></canvas>
+      </div>
+
+      <!-- Dual Synchronized Graphs -->
+      <div class="panel graph-stack" style="flex: 1; display: flex; flex-direction: column; min-height: 0;">
+        <div class="graph-header">
+          <strong class="graph-header__title" id="lblDual">Dual Synchronized Graphs</strong>
+          <span class="graph-header__sub" id="lblShared">Shared phase axis: 0°, 90°, 180°, 270°, 360°</span>
+        </div>
+        <canvas id="emfGraph" class="graph-canvas" width="1000" height="280" style="width: 100%; height: 100%; min-height: 0;" aria-label="Induced EMF graph"></canvas>
+        <canvas id="currentGraph" class="graph-canvas" width="1000" height="280" style="width: 100%; height: 100%; min-height: 0;" aria-label="Induced current graph"></canvas>
+        <div class="legend-row">
+          <div class="legend-pill"><span class="swatch swatch--cyan"></span><span id="lblCyan">Cyan coil side</span></div>
+          <div class="legend-pill"><span class="swatch swatch--magenta"></span><span id="lblMagenta">Magenta coil side</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════
+         RIGHT COLUMN — Math & Telemetry
+         ════════════════════════════════════════════ -->
+    <aside class="col-telemetry">
+
+      <!-- Live Readouts -->
+      <section class="panel panel-pad">
+        <div class="section-label" id="lblLiveReadouts">Live Readouts</div>
+        <div class="readout-grid">
+          <div class="readout"><span class="readout__label" id="lblPhase">Phase θ</span><strong class="readout__value" id="phaseReadout">0°</strong></div>
+          <div class="readout"><span class="readout__label" id="lblEmf">EMF ε</span><strong class="readout__value" id="emfReadout">0.00 V</strong></div>
+          <div class="readout"><span class="readout__label" id="lblCurrent">Current I</span><strong class="readout__value" id="currentReadout">0.00 A</strong></div>
+          <div class="readout"><span class="readout__label" id="lblRes">Resistance R</span><strong class="readout__value" id="resistanceReadout">4.50 Ω</strong></div>
+          <div class="readout"><span class="readout__label" id="lblFlux">Flux Linkage</span><strong class="readout__value" id="fluxReadout">0.450</strong></div>
+          <div class="readout"><span class="readout__label" id="lblFreq">Frequency</span><strong class="readout__value" id="freqReadout">1.59 Hz</strong></div>
+        </div>
+      </section>
+
+      <!-- Live Formulas -->
+      <section class="panel panel-pad">
+        <div class="section-label" id="lblLiveFormulas">Live Formulas</div>
+        <div class="math-stack">
+          <div class="math-card">
+            <div class="math-card__label" id="lblInstEmf">Instantaneous EMF</div>
+            <div class="math-card__eq">ε = ε₀ sin(ωt)</div>
+            <div class="math-card__sub" id="emfFormula">ε = 4.50V · sin(0.00) = 0.00 V</div>
+          </div>
+          <div class="math-card">
+            <div class="math-card__label" id="lblPeakEmf">Peak EMF</div>
+            <div class="math-card__eq">ε₀ = N · B · A · ω</div>
+            <div class="math-card__sub" id="peakFormula">ε₀ = 60 · 0.30T · 0.025m² · 10.0 = 4.50 V</div>
+          </div>
+          <div class="math-card">
+            <div class="math-card__label" id="lblPeakCurrent">Peak Current</div>
+            <div class="math-card__eq">I₀ = ε₀ / R</div>
+            <div class="math-card__sub" id="peakCurrentFormula">I₀ = 4.50V / 4.50Ω = 1.00 A</div>
+          </div>
+          <div class="math-card">
+            <div class="math-card__label" id="lblInstCurrent">Instantaneous Current</div>
+            <div class="math-card__eq">I = I₀ sin(ωt)</div>
+            <div class="math-card__sub" id="currentFormula">I = 1.00A · sin(0.00) = 0.00 A</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Live Telemetry Insight — Phase Timeline -->
+      <section class="panel panel-pad telemetry-card">
+        <div class="telemetry-card__header">
+          <div class="telemetry-card__title" id="lblTelemetry">Live Telemetry Insight</div>
+        </div>
+
+        <!-- Interactive Phase Path Timeline -->
+        <div class="phase-path">
+          <div class="phase-path-track">
+            <div class="phase-line"></div>
+            <button class="phase-node active" type="button" data-target="0" aria-label="Snap to 0 degrees">
+              <div class="phase-node__dot"></div>
+              <div class="phase-node__label">0°/360°</div>
+            </button>
+            <button class="phase-node" type="button" data-target="90" aria-label="Snap to 90 degrees">
+              <div class="phase-node__dot"></div>
+              <div class="phase-node__label">90°</div>
+            </button>
+            <button class="phase-node" type="button" data-target="180" aria-label="Snap to 180 degrees">
+              <div class="phase-node__dot"></div>
+              <div class="phase-node__label">180°</div>
+            </button>
+            <button class="phase-node" type="button" data-target="270" aria-label="Snap to 270 degrees">
+              <div class="phase-node__dot"></div>
+              <div class="phase-node__label">270°</div>
+            </button>
+          </div>
+          <div class="phase-path-desc" id="phaseDesc" aria-live="polite">
+            0°/360°: Coil vertical, zero flux cutting, 0V EMF and 0A current generated.
+          </div>
+        </div>
+      </section>
+    </aside>
+
+  </div><!-- /sim-view -->
+
+  <!-- ─── QUIZ VIEW ─── -->
+  <div class="quiz-view" id="quizView">
+    <div class="quiz-header">
+      <h2 id="lblQuizHead">Knowledge Check</h2>
+      <p id="lblQuizSub">Test your understanding of AC generator principles</p>
+    </div>
+    <div id="quizList" class="quiz-list"></div>
+  </div>
+
+</div><!-- /app-body -->
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     JAVASCRIPT — All simulation logic, rendering, interaction
+     ═══════════════════════════════════════════════════════════════ -->
+<script>
+// ═══════════════════════════════════════════════════════════════
+// DOM REFERENCES
+// ═══════════════════════════════════════════════════════════════
+const CV  = document.getElementById('scene');
+const G   = CV.getContext('2d');
+const ECV = document.getElementById('emfGraph');
+const EG  = ECV.getContext('2d');
+const ICV = document.getElementById('currentGraph');
+const IG  = ICV.getContext('2d');
+
+const W = 1000, H = 500;
+const GW = 1000, GH = 280;
+
+// ═══════════════════════════════════════════════════════════════
+// PHYSICS CONSTANTS
+// ═══════════════════════════════════════════════════════════════
+const physics = {
+  turns: 60,
+  area: 0.025,
+  maxB: 0.30,
+  maxOmega: 10,
+  resistanceBase: 9
+};
+
+// ═══════════════════════════════════════════════════════════════
+// CONTROL ELEMENT REFERENCES
+// ═══════════════════════════════════════════════════════════════
+const omegaSlider      = document.getElementById('omegaSlider');
+const fieldSlider      = document.getElementById('fieldSlider');
+const thicknessSlider  = document.getElementById('thicknessSlider');
+const omegaValue       = document.getElementById('omegaValue');
+const fieldValue       = document.getElementById('fieldValue');
+const thicknessValue   = document.getElementById('thicknessValue');
+const runToggle        = document.getElementById('run');
+const vectorsToggle    = document.getElementById('vectors');
+const labelsToggle     = document.getElementById('labels');
+const autoPauseToggle  = document.getElementById('autoPause');
+const resumeButton     = document.getElementById('resumeButton');
+const phaseReadout     = document.getElementById('phaseReadout');
+const emfReadout       = document.getElementById('emfReadout');
+const currentReadout   = document.getElementById('currentReadout');
+const resistanceReadout= document.getElementById('resistanceReadout');
+const fluxReadout      = document.getElementById('fluxReadout');
+const freqReadout      = document.getElementById('freqReadout');
+const emfFormula       = document.getElementById('emfFormula');
+const peakFormula      = document.getElementById('peakFormula');
+const peakCurrentFormula = document.getElementById('peakCurrentFormula');
+const currentFormula   = document.getElementById('currentFormula');
+const quizList         = document.getElementById('quizList');
+
+const phaseNodes = document.querySelectorAll('.phase-node');
+const phaseDesc  = document.getElementById('phaseDesc');
+
+const nodeDescriptions = {};
+// Initialized dynamically by language
+
+phaseNodes.forEach(node => {
+  node.addEventListener('click', () => {
+    const targetDeg = +node.dataset.target;
+    if (running) toggleRunning();
+    phase = targetDeg * (Math.PI / 180);
+    updatePhasePath(phase);
+  });
+});
+
+// View switching
+const tabBtns   = document.querySelectorAll('.tab-btn');
+const simView   = document.getElementById('simView');
+const quizView  = document.getElementById('quizView');
+
+// ═══════════════════════════════════════════════════════════════
+// SIMULATION STATE
+// ═══════════════════════════════════════════════════════════════
+let running       = true;
+let showVectors   = true;
+let showLabels    = true;
+let phase         = 0;
+let lastT         = 0;
+let isDragging    = false;
+let dragStartX    = 0;
+let dragStartPhase= 0;
+let chargePhase   = 0;
+let autoPaused    = false;
+let bulbMemory    = 0;
+
+// ═══════════════════════════════════════════════════════════════
+// 3D CAMERA CONSTANTS
+// ═══════════════════════════════════════════════════════════════
+const CAM_YAW   = -Math.PI / 15 - Math.PI / 100;
+const CAM_PITCH = Math.PI / 6;
+const cyaw  = Math.cos(CAM_YAW),  syaw  = Math.sin(CAM_YAW);
+const cpitch= Math.cos(CAM_PITCH), spitch= Math.sin(CAM_PITCH);
+const OX = 610, OY = 305;
+
+// ═══════════════════════════════════════════════════════════════
+// GENERATOR GEOMETRY CONSTANTS
+// ═══════════════════════════════════════════════════════════════
+const AY = 28;
+const COIL_CX = -205;
+const COIL_HA = 118;
+const COIL_HZ_BACK = -108;
+const COIL_HZ_OPEN = 108;
+const MAG_N_OUTER = -535;
+const MAG_N_FACE  = -380;
+const MAG_S_OUTER = 142;
+const MAG_S_FACE  = -20;
+const MAG_ZH  = 145;
+const MAG_TY  = 62;
+const RING_A_Z = 252;
+const RING_B_Z = 328;
+const RING_R_A = 30;
+const RING_R_B = 24;
+const BRUSH_BW = 18;
+const BRUSH_BH = 10;
+const BRUSH_EXT = 24;
+const BULB_X   = 320;
+const BULB_Z   = 300;
+const ZERO_EPS = 1e-10;
+
+
+// ═══════════════════════════════════════════════════════════════
+// LOCALIZATION (English / Tamil)
+// ═══════════════════════════════════════════════════════════════
+const i18n = {
+  en: {
+    title: "AC Generator Lab", badge: "Class 9 Physics", tabSim: "Simulation", tabQuiz: "Quiz",
+    ctrl: "Controls", rot: "Rotation ω", field: "Field B", thick: "Wire Thickness",
+    opts: "Options", autoRot: "Auto Rotate", vec: "B, v, I Vectors", comp: "Component Labels",
+    autoPause: "Auto-Pause at Milestones", resume: "Resume",
+    note: "Turn Auto Rotate off to drag the coil manually. Auto-pause snaps to 0°, 90°, 180°, or 270°.",
+    readouts: "Live Readouts", phase: "Phase θ", emf: "EMF ε", current: "Current I", res: "Resistance R",
+    flux: "Flux Linkage", freq: "Frequency", formulas: "Live Formulas", instEmf: "Instantaneous EMF",
+    peakEmf: "Peak EMF", peakCurrent: "Peak Current", instCurrent: "Instantaneous Current",
+    telemetry: "Live Telemetry Insight",
+    d0: "0°/360°: Coil vertical, zero flux cutting, 0V EMF and 0A current generated.",
+    d90: "90°: Coil horizontal, maximum flux cutting, +Peak EMF and current generated.",
+    d180: "180°: Coil vertical, zero flux cutting, 0V EMF and 0A current generated.",
+    d270: "270°: Coil horizontal, maximum flux cutting in reverse, −Peak EMF and current generated.",
+    qHead: "Knowledge Check", qSub: "Test your understanding of AC generator principles",
+    dual: "Dual Synchronized Graphs", shared: "Shared phase axis: 0°, 90°, 180°, 270°, 360°",
+    cyan: "Cyan coil side", magenta: "Magenta coil side",
+    nPole: "North Pole", sPole: "South Pole", magField: "Magnetic Field B: N → S",
+    armature: "Armature", rotAxis: "Rotation Axis", slipRings: "Slip Rings", brushes: "Carbon Brushes",
+    bulb: "Lightbulb Load", gEmf: "Induced EMF ε (Voltage)", gCurrent: "Induced Current I",
+    phaseEq: "phase θ = ωt", voltEmf: "Voltage / EMF", currentStr: "Current",
+    corr: "Correct! ", incorr: "Not quite. ",
+    q: [
+      { q: 'When is the induced current maximum?',
+        o: ['When the coil is horizontal and cuts field lines fastest', 'When the coil is vertical and flux linkage is largest', 'When the coil is not rotating'],
+        e: 'Current is largest when EMF is largest, at the maximum flux-cutting position (coil plane parallel to field).' },
+      { q: 'Which components prevent the outside wires from tangling?',
+        o: ['Slip rings and carbon brushes', 'The north and south magnetic poles', 'The lightbulb load'],
+        e: 'Slip rings rotate with the coil while carbon brushes maintain stationary contact with the external circuit.' },
+      { q: 'If the magnetic field strength B is increased, what happens to peak EMF?',
+        o: ['It increases in direct proportion to B', 'It becomes zero', 'It changes into DC voltage'],
+        e: 'Peak EMF = NBAω, so it grows directly when B grows — a linear relationship.' },
+      { q: 'Why does thicker coil wire increase the current graph height?',
+        o: ['Thicker wire lowers resistance, so I₀ = ε₀ / R increases', 'Thicker wire changes the magnet poles', 'Thicker wire changes the graph angle labels'],
+        e: "For the same voltage, lower resistance gives greater current by Ohm's law (I = V/R)." }
+    ]
+  },
+  ta: {
+    title: "மாறுதிசை மின்னியற்றி ஆய்வகம்", badge: "வகுப்பு 9 இயற்பியல்", tabSim: "உருவகப்படுத்துதல்", tabQuiz: "வினாடி வினா",
+    ctrl: "கட்டுப்பாடுகள்", rot: "சுழற்சி ω", field: "காந்தப்புலம் B", thick: "கம்பி தடிமன்",
+    opts: "விருப்பங்கள்", autoRot: "தானியங்கி சுழற்சி", vec: "B, v, I திசையன்கள்", comp: "பாகங்களின் பெயர்கள்",
+    autoPause: "முக்கிய கட்டங்களில் இடைநிறுத்தம்", resume: "தொடரவும்",
+    note: "சுருளை கைமுறையாக சுழற்ற தானியங்கி சுழற்சியை அணைக்கவும். 0°, 90°, 180°, 270° களில் தானாக இடைநிறுத்தப்படும்.",
+    readouts: "நேரடி அளவீடுகள்", phase: "கட்டம் θ", emf: "மின்னியக்குவிசை ε", current: "மின்னோட்டம் I", res: "மின்தடை R",
+    flux: "காந்தப்பாயம்", freq: "அதிர்வெண்", formulas: "நேரடி சூத்திரங்கள்", instEmf: "உடனடி மின்னியக்குவிசை",
+    peakEmf: "உச்ச மின்னியக்குவிசை", peakCurrent: "உச்ச மின்னோட்டம்", instCurrent: "உடனடி மின்னோட்டம்",
+    telemetry: "நேரடி நுண்ணறிவு",
+    d0: "0°/360°: சுருள் செங்குத்தாக உள்ளது, பாயம் வெட்டப்படவில்லை, 0V EMF மற்றும் 0A மின்னோட்டம்.",
+    d90: "90°: சுருள் கிடைமட்டமாக உள்ளது, அதிகபட்ச பாயம் வெட்டப்படுகிறது, +உச்ச EMF மற்றும் மின்னோட்டம்.",
+    d180: "180°: சுருள் செங்குத்தாக உள்ளது, பாயம் வெட்டப்படவில்லை, 0V EMF மற்றும் 0A மின்னோட்டம்.",
+    d270: "270°: சுருள் கிடைமட்டமாக உள்ளது, எதிர் திசையில் அதிகபட்ச பாயம் வெட்டப்படுகிறது, −உச்ச EMF மற்றும் மின்னோட்டம்.",
+    qHead: "அறிவு சோதனை", qSub: "மாறுதிசை மின்னியற்றி தத்துவங்களை சோதிக்கவும்",
+    dual: "இரட்டை வரைபடங்கள்", shared: "பொதுவான கட்ட அச்சு: 0°, 90°, 180°, 270°, 360°",
+    cyan: "சியான் சுருள் பக்கம்", magenta: "மெஜந்தா சுருள் பக்கம்",
+    nPole: "வட துருவம்", sPole: "தென் துருவம்", magField: "காந்தப்புலம் B: N → S",
+    armature: "ஆர்மேச்சர்", rotAxis: "சுழற்சி அச்சு", slipRings: "நழுவு வளையங்கள்", brushes: "கார்பன் தூரிகைகள்",
+    bulb: "மின்குமிழ் சுமை", gEmf: "தூண்டப்பட்ட EMF ε (மின்னழுத்தம்)", gCurrent: "தூண்டப்பட்ட மின்னோட்டம் I",
+    phaseEq: "கட்டம் θ = ωt", voltEmf: "மின்னழுத்தம் / EMF", currentStr: "மின்னோட்டம்",
+    corr: "சரி! ", incorr: "தவறு. ",
+    q: [
+      { q: 'தூண்டப்பட்ட மின்னோட்டம் எப்போது அதிகபட்சமாக இருக்கும்?',
+        o: ['சுருள் கிடைமட்டமாக இருந்து காந்த விசைக்கோடுகளை வேகமாக வெட்டும்போது', 'சுருள் செங்குத்தாக இருந்து காந்தப்பாயம் அதிகபட்சமாக இருக்கும்போது', 'சுருள் சுழலாமல் இருக்கும்போது'],
+        e: 'மின்னியக்குவிசை (EMF) அதிகபட்சமாக இருக்கும்போது மின்னோட்டமும் அதிகபட்சமாக இருக்கும்.' },
+      { q: 'வெளியே செல்லும் கம்பிகள் சிக்குவதைத் தடுக்கும் பாகங்கள் யாவை?',
+        o: ['நழுவு வளையங்கள் மற்றும் கார்பன் தூரிகைகள்', 'வட மற்றும் தென் காந்த துருவங்கள்', 'மின்குமிழ் சுமை'],
+        e: 'நழுவு வளையங்கள் சுருளுடன் சுழல்கின்றன, அதேசமயம் கார்பன் தூரிகைகள் வெளிச்சுற்றுடன் நிலையான தொடர்பைப் பேணுகின்றன.' },
+      { q: 'காந்தப்புலம் B அதிகரித்தால், உச்ச மின்னியக்குவிசை என்னவாகும்?',
+        o: ['B-க்கு நேர்த்தகவில் அதிகரிக்கும்', 'பூஜ்ஜியமாக மாறும்', 'DC மின்னழுத்தமாக மாறும்'],
+        e: 'உச்ச EMF = NBAω, எனவே B அதிகரிக்கும் போது அது நேரடியாக அதிகரிக்கும்.' },
+      { q: 'கம்பி தடிமனாக இருந்தால் மின்னோட்ட வரைபடம் ஏன் உயர்கிறது?',
+        o: ['தடிமனான கம்பி மின்தடையைக் குறைக்கிறது, எனவே I₀ = ε₀ / R அதிகரிக்கிறது', 'தடிமனான கம்பி காந்த துருவங்களை மாற்றுகிறது', 'தடிமனான கம்பி வரைபட கோணங்களை மாற்றுகிறது'],
+        e: 'ஓமின் விதிப்படி (I = V/R) குறைந்த மின்தடை அதிக மின்னோட்டத்தை அளிக்கிறது.' }
+    ]
+  }
+};
+
+let currentLang = 'en';
+
+function applyLang() {
+  const t = i18n[currentLang];
+  document.getElementById('appTitle').textContent = t.title;
+  document.getElementById('appBadge').textContent = t.badge;
+  document.getElementById('tabSimText').textContent = t.tabSim;
+  document.getElementById('tabQuizText').textContent = t.tabQuiz;
+  document.getElementById('lblControls').textContent = t.ctrl;
+  document.getElementById('lblRot').textContent = t.rot;
+  document.getElementById('lblField').textContent = t.field;
+  document.getElementById('lblThick').textContent = t.thick;
+  document.getElementById('lblOptions').textContent = t.opts;
+  document.getElementById('lblAutoRot').textContent = t.autoRot;
+  document.getElementById('lblVec').textContent = t.vec;
+  document.getElementById('lblComp').textContent = t.comp;
+  document.getElementById('lblAutoPause').textContent = t.autoPause;
+  document.getElementById('lblResume').textContent = t.resume;
+  document.getElementById('lblNote').textContent = t.note;
+  document.getElementById('lblLiveReadouts').textContent = t.readouts;
+  document.getElementById('lblPhase').textContent = t.phase;
+  document.getElementById('lblEmf').textContent = t.emf;
+  document.getElementById('lblCurrent').textContent = t.current;
+  document.getElementById('lblRes').textContent = t.res;
+  document.getElementById('lblFlux').textContent = t.flux;
+  document.getElementById('lblFreq').textContent = t.freq;
+  document.getElementById('lblLiveFormulas').textContent = t.formulas;
+  document.getElementById('lblInstEmf').textContent = t.instEmf;
+  document.getElementById('lblPeakEmf').textContent = t.peakEmf;
+  document.getElementById('lblPeakCurrent').textContent = t.peakCurrent;
+  document.getElementById('lblInstCurrent').textContent = t.instCurrent;
+  document.getElementById('lblTelemetry').textContent = t.telemetry;
+  nodeDescriptions[0] = t.d0;
+  nodeDescriptions[90] = t.d90;
+  nodeDescriptions[180] = t.d180;
+  nodeDescriptions[270] = t.d270;
+  document.getElementById('lblDual').textContent = t.dual;
+  document.getElementById('lblShared').textContent = t.shared;
+  document.getElementById('lblCyan').textContent = t.cyan;
+  document.getElementById('lblMagenta').textContent = t.magenta;
+  document.getElementById('lblQuizHead').textContent = t.qHead;
+  document.getElementById('lblQuizSub').textContent = t.qSub;
+  renderQuiz();
+  updatePhasePath(phase);
+}
+
+document.getElementById('langToggleBtn').addEventListener('change', (e) => {
+  currentLang = e.target.checked ? 'ta' : 'en';
+  document.getElementById('langLabelEn').style.color = currentLang === 'en' ? '#fff' : 'var(--text-secondary)';
+  document.getElementById('langLabelTa').style.color = currentLang === 'ta' ? '#fff' : 'var(--text-secondary)';
+  applyLang();
+});
+
+// ═══════════════════════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════════════════
+// QUIZ DATA
+// ═══════════════════════════════════════════════════════════════
+// quizQuestions is fetched from i18n[currentLang].q
+
+// ═══════════════════════════════════════════════════════════════
+// VIEW SWITCHING (Simulation ↔ Quiz)
+// ═══════════════════════════════════════════════════════════════
+tabBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    const view = btn.dataset.view;
+    tabBtns.forEach(b => {
+      b.classList.toggle('active', b.dataset.view === view);
+      b.setAttribute('aria-selected', b.dataset.view === view);
+    });
+    if (view === 'sim') {
+      simView.classList.remove('hidden');
+      quizView.classList.remove('active');
+    } else {
+      simView.classList.add('hidden');
+      quizView.classList.add('active');
+    }
+  });
+});
+
+
+// ═══════════════════════════════════════════════════════════════
+// CONTROL EVENT HANDLERS
+// ═══════════════════════════════════════════════════════════════
+runToggle.onchange = e => {
+  running = e.target.checked;
+  if (running) {
+    autoPaused = false;
+    resumeButton.disabled = true;
+  }
+  updateCursor();
+};
+
+vectorsToggle.onchange = e => showVectors = e.target.checked;
+labelsToggle.onchange  = e => showLabels  = e.target.checked;
+
+resumeButton.onclick = () => {
+  autoPaused = false;
+  running    = true;
+  runToggle.checked = true;
+  resumeButton.disabled = true;
+  phase += 0.0005;
+  updateCursor();
+};
+
+quizList.addEventListener('click', handleQuizOption);
+
+
+// ═══════════════════════════════════════════════════════════════
+// PHYSICS HELPER FUNCTIONS
+// ═══════════════════════════════════════════════════════════════
+function getOmega()     { return +omegaSlider.value; }
+function getB()         { return +fieldSlider.value; }
+function getThickness() { return +thicknessSlider.value; }
+
+function resistanceFromThickness(thickness) {
+  return physics.resistanceBase / thickness;
+}
+
+function peakEmf(B, omega) {
+  return physics.turns * B * physics.area * omega;
+}
+
+function peakCurrent(B, omega, resistance) {
+  return peakEmf(B, omega) / resistance;
+}
+
+function normalizePhase(a) {
+  const twoPi = Math.PI * 2;
+  return ((a % twoPi) + twoPi) % twoPi;
+}
+
+function phaseDeg(a) {
+  return normalizePhase(a) * 180 / Math.PI;
+}
+
+function snapZero(v) {
+  return Math.abs(v) < ZERO_EPS ? 0 : v;
+}
+
+function emfAt(theta, B, omega) {
+  return snapZero(peakEmf(B, omega) * Math.sin(theta));
+}
+
+function currentAt(theta, B, omega, resistance) {
+  return snapZero(emfAt(theta, B, omega) / resistance);
+}
+
+function fluxLinkage(theta, B) {
+  return snapZero(physics.turns * B * physics.area * Math.cos(theta));
+}
+
+function frequencyFromOmega(omega) {
+  return omega / (Math.PI * 2);
+}
+
+function coilAngleFromPhase(theta) {
+  return -theta + Math.PI / 2;
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// 3D PROJECTION
+// ═══════════════════════════════════════════════════════════════
+function proj(x, y, z) {
+  const rx = x * cyaw + z * syaw;
+  const rz = -x * syaw + z * cyaw;
+  return { x: OX + rx, y: OY - (y * cpitch - rz * spitch) };
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// COIL GEOMETRY
+// ═══════════════════════════════════════════════════════════════
+function coilEndpoints(a) {
+  const cosA = Math.cos(a), sinA = Math.sin(a);
+  const axA = COIL_CX + COIL_HA * cosA;
+  const ayA = AY + COIL_HA * sinA * 0.55;
+  const axB = COIL_CX - COIL_HA * cosA;
+  const ayB = AY - COIL_HA * sinA * 0.55;
+  return {
+    axA, ayA, axB, ayB,
+    A_back: [axA, ayA, COIL_HZ_BACK],
+    A_open: [axA, ayA, COIL_HZ_OPEN],
+    B_back: [axB, ayB, COIL_HZ_BACK],
+    B_open: [axB, ayB, COIL_HZ_OPEN]
+  };
+}
+
+function currentDirectionFromCrossProduct(coilAngle, side) {
+  const sideSign = side === 'A' ? 1 : -1;
+  const vy = sideSign * (-Math.cos(coilAngle));
+  const zDirection = -vy;
+  return Math.abs(zDirection) < ZERO_EPS ? 0 : Math.sign(zDirection);
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// 3D DRAWING PRIMITIVES
+// ═══════════════════════════════════════════════════════════════
+function drawFace(pts3, fill, stroke = '', lw = 1) {
+  const p = pts3.map(v => proj(...v));
+  G.beginPath();
+  G.moveTo(p[0].x, p[0].y);
+  for (let i = 1; i < p.length; i++) G.lineTo(p[i].x, p[i].y);
+  G.closePath();
+  if (fill)   { G.fillStyle = fill;     G.fill(); }
+  if (stroke) { G.strokeStyle = stroke;  G.lineWidth = lw;  G.stroke(); }
+}
+
+function drawLine3(points, color, width, shadow = 0) {
+  const p = points.map(v => proj(...v));
+  G.save();
+  G.strokeStyle = color;
+  G.lineWidth   = width;
+  G.lineCap     = 'round';
+  G.lineJoin    = 'round';
+  if (shadow) {
+    G.shadowColor = color;
+    G.shadowBlur  = shadow;
+  }
+  G.beginPath();
+  G.moveTo(p[0].x, p[0].y);
+  for (let i = 1; i < p.length; i++) G.lineTo(p[i].x, p[i].y);
+  G.stroke();
+  G.restore();
+}
+
+function drawLabel(text, p2d, color, size = 15, bgAlpha = 0.62) {
+  if (!showLabels) return;
+  G.save();
+  G.font = '900 ' + size + 'px Inter, Segoe UI';
+  const tw = G.measureText(text).width;
+  G.fillStyle   = 'rgba(7,10,13,' + bgAlpha + ')';
+  G.strokeStyle = 'rgba(255,255,255,0.12)';
+  G.lineWidth   = 1;
+  G.beginPath();
+  if (G.roundRect) G.roundRect(p2d.x - tw / 2 - 7, p2d.y - size - 4, tw + 14, size + 10, 5);
+  else G.rect(p2d.x - tw / 2 - 7, p2d.y - size - 4, tw + 14, size + 10);
+  G.fill();
+  G.stroke();
+  G.fillStyle    = color;
+  G.textAlign    = 'center';
+  G.textBaseline = 'alphabetic';
+  G.fillText(text, p2d.x, p2d.y);
+  G.restore();
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// SCENE BACKGROUND
+// ═══════════════════════════════════════════════════════════════
+function drawBG() {
+  const bg = G.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, '#070a0f');
+  bg.addColorStop(0.55, '#0e1319');
+  bg.addColorStop(1, '#11151a');
+  G.fillStyle = bg;
+  G.fillRect(0, 0, W, H);
+
+  // (Removed 3D grid and base platform for cleaner background)
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// MAGNETS
+// ═══════════════════════════════════════════════════════════════
+function drawMagnet(isNorth) {
+  const xOuter = isNorth ? MAG_N_OUTER : MAG_S_OUTER;
+  const xFace  = isNorth ? MAG_N_FACE  : MAG_S_FACE;
+  const zH = MAG_ZH, TY = MAG_TY, armW = 54;
+  const top  = isNorth ? '#ff4638' : '#3d7cff';
+  const mid  = isNorth ? '#b82018' : '#2451bf';
+  const dark = isNorth ? '#71120e' : '#162d72';
+  const side = isNorth ? '#8e1912' : '#1e3d91';
+  const zBack1 = -zH + armW, zBack2 = zH - armW;
+
+  drawFace([[xOuter,0,zBack1],[xFace,0,zBack1],[xFace,0,zBack2],[xOuter,0,zBack2]], dark, dark);
+  drawFace([[xOuter,0,zBack1],[xOuter,0,zBack2],[xOuter,TY,zBack2],[xOuter,TY,zBack1]], side, side);
+  drawFace([[xOuter,TY,zBack1],[xFace,TY,zBack1],[xFace,TY,zBack2],[xOuter,TY,zBack2]], top, top);
+  drawFace([[xFace,0,zBack1],[xFace,TY,zBack1],[xFace,TY,zBack2],[xFace,0,zBack2]], mid, mid);
+  drawFace([[xOuter,0,-zH],[xFace,0,-zH],[xFace,TY,-zH],[xOuter,TY,-zH]], mid, mid);
+  drawFace([[xOuter,TY,-zH],[xFace,TY,-zH],[xFace,TY,zBack1],[xOuter,TY,zBack1]], top, top);
+  drawFace([[xOuter,0,-zH],[xOuter,0,zBack1],[xOuter,TY,zBack1],[xOuter,TY,-zH]], side, side);
+  drawFace([[xOuter,0,-zH],[xFace,0,-zH],[xFace,0,zBack1],[xOuter,0,zBack1]], dark, dark);
+  drawFace([[xFace,0,-zH],[xFace,TY,-zH],[xFace,TY,zBack1],[xFace,0,zBack1]], mid, mid);
+  drawFace([[xOuter,0,zBack2],[xFace,0,zBack2],[xFace,TY,zBack2],[xOuter,TY,zBack2]], mid, mid);
+  drawFace([[xOuter,0,zH],[xFace,0,zH],[xFace,TY,zH],[xOuter,TY,zH]], mid, mid);
+  drawFace([[xOuter,TY,zBack2],[xFace,TY,zBack2],[xFace,TY,zH],[xOuter,TY,zH]], top, top);
+  drawFace([[xOuter,0,zBack2],[xOuter,0,zH],[xOuter,TY,zH],[xOuter,TY,zBack2]], side, side);
+  drawFace([[xOuter,0,zBack2],[xFace,0,zBack2],[xFace,0,zH],[xOuter,0,zH]], dark, dark);
+  drawFace([[xFace,0,zBack2],[xFace,TY,zBack2],[xFace,TY,zH],[xFace,0,zH]], mid, mid);
+
+  const lp = proj((xOuter + xFace) / 2, TY + 5, 0);
+  G.save();
+  G.font = '900 40px Arial';
+  G.textAlign = 'center';
+  G.textBaseline = 'middle';
+  G.fillStyle = 'rgba(255,255,255,0.96)';
+  G.shadowColor = isNorth ? '#ff4638' : '#3d7cff';
+  G.shadowBlur = 24;
+  G.fillText(isNorth ? 'N' : 'S', lp.x, lp.y);
+  G.restore();
+  drawLabel(isNorth ? i18n[currentLang].nPole : i18n[currentLang].sPole, proj((xOuter + xFace) / 2, TY + 38, 0), isNorth ? '#ffc0b8' : '#bcd2ff', 15);
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// FIELD LINES
+// ═══════════════════════════════════════════════════════════════
+function drawFieldLines(B) {
+  const density = Math.round(5 + ((B - 0.10) / 0.20) * 12);
+  const n = Math.max(5, Math.min(17, density));
+  const fy = AY + 4;
+  G.save();
+  for (let i = 0; i < n; i++) {
+    const t = n === 1 ? 0.5 : i / (n - 1);
+    const z = (t - 0.5) * MAG_ZH * 1.72;
+    const alpha = 0.42 + 0.48 * (B / physics.maxB);
+    G.strokeStyle = 'rgba(246,183,60,' + alpha.toFixed(3) + ')';
+    G.lineWidth = 1.2 + B * 3;
+    const p0 = proj(MAG_N_FACE + 8, fy, z);
+    const p1 = proj(MAG_N_FACE + 65, fy, z);
+    const p2 = proj(MAG_S_FACE - 65, fy, z);
+    const p3 = proj(MAG_S_FACE - 8, fy, z);
+    G.beginPath();
+    G.moveTo(p0.x, p0.y);
+    G.bezierCurveTo(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y);
+    G.stroke();
+    if (i % 2 === 0) {
+      const mx = (p0.x + 3 * p1.x + 3 * p2.x + p3.x) / 8;
+      const my = (p0.y + 3 * p1.y + 3 * p2.y + p3.y) / 8;
+      const dx = p3.x - p0.x, dy = p3.y - p0.y, len = Math.hypot(dx, dy) || 1;
+      G.fillStyle = 'rgba(246,183,60,' + alpha.toFixed(3) + ')';
+      G.beginPath();
+      G.moveTo(mx + dx / len * 8, my + dy / len * 8);
+      G.lineTo(mx - dx / len * 4 + dy / len * 4, my - dy / len * 4 - dx / len * 4);
+      G.lineTo(mx - dx / len * 4 - dy / len * 4, my - dy / len * 4 + dx / len * 4);
+      G.closePath();
+      G.fill();
+    }
+  }
+  G.restore();
+  const label = proj(COIL_CX, fy - 48, -50);
+  G.font = '900 15px Inter, Segoe UI';
+  G.fillStyle = 'rgba(246,183,60,0.95)';
+  G.textAlign = 'center';
+  G.fillText(i18n[currentLang].magField, label.x, label.y);
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// ARROWS (2D / 3D)
+// ═══════════════════════════════════════════════════════════════
+function drawArrow2D(x1, y1, x2, y2, color, width = 3, head = 11) {
+  const dx = x2 - x1, dy = y2 - y1;
+  const len = Math.hypot(dx, dy) || 1;
+  const ux = dx / len, uy = dy / len;
+  G.strokeStyle = color;
+  G.lineWidth = width;
+  G.lineCap = 'round';
+  G.beginPath();
+  G.moveTo(x1, y1);
+  G.lineTo(x2, y2);
+  G.stroke();
+  G.fillStyle = color;
+  G.beginPath();
+  G.moveTo(x2, y2);
+  G.lineTo(x2 - ux * head + uy * head * 0.55, y2 - uy * head - ux * head * 0.55);
+  G.lineTo(x2 - ux * head - uy * head * 0.55, y2 - uy * head + ux * head * 0.55);
+  G.closePath();
+  G.fill();
+}
+
+function drawArrow3D(start, end, color, label) {
+  const a = proj(...start), b = proj(...end);
+  G.save();
+  G.shadowColor = color;
+  G.shadowBlur = 9;
+  drawArrow2D(a.x, a.y, b.x, b.y, color, 4, 12);
+  G.shadowBlur = 0;
+  if (label) {
+    G.font = '900 15px Inter, Segoe UI';
+    G.fillStyle = color;
+    G.textAlign = 'center';
+    G.fillText(label, b.x + 12, b.y - 8);
+  }
+  G.restore();
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// COIL DRAWING
+// ═══════════════════════════════════════════════════════════════
+function drawCoil(a, theta, B, omega, thickness) {
+  const e = coilEndpoints(a);
+  const wire = 5 + thickness * 2.4;
+  const emf = emfAt(theta, B, omega);
+  const ratio = Math.min(1, Math.abs(emf) / Math.max(0.001, peakEmf(physics.maxB, physics.maxOmega)));
+
+  // (Removed yellow EMF glow circle per user instruction)
+
+  // Coil wires
+  drawLine3([e.A_back, e.B_back], 'rgba(255,211,96,0.95)', Math.max(4, wire * 0.56), 8);
+  drawLine3([e.A_open, e.B_open], 'rgba(255,211,96,0.95)', Math.max(4, wire * 0.56), 8);
+  drawLine3([e.A_back, e.A_open], '#39d8ff', wire, 14);
+  drawLine3([e.B_back, e.B_open], '#ff4fd8', wire, 14);
+
+  // Connections to slip rings
+  const ringAx = COIL_CX + RING_R_A * Math.cos(a);
+  const ringAy = AY + RING_R_A * Math.sin(a) * 0.55;
+  const ringBx = COIL_CX - RING_R_B * Math.cos(a);
+  const ringBy = AY - RING_R_B * Math.sin(a) * 0.55;
+  drawLine3([e.A_open, [ringAx, ringAy, RING_A_Z]], '#39d8ff', Math.max(3, wire * 0.46), 8);
+  drawLine3([e.B_open, [ringBx, ringBy, RING_B_Z]], '#ff4fd8', Math.max(3, wire * 0.46), 8);
+
+  // Glow dots at coil ends
+  [[e.A_open, '#39d8ff'], [e.B_open, '#ff4fd8']].forEach(([p, color]) => {
+    const sp = proj(...p);
+    G.fillStyle = color;
+    G.shadowColor = color;
+    G.shadowBlur = 13;
+    G.beginPath();
+    G.arc(sp.x, sp.y, 5.5, 0, Math.PI * 2);
+    G.fill();
+    G.shadowBlur = 0;
+  });
+
+  drawLabel(i18n[currentLang].armature, proj(COIL_CX, AY + 138, 0), '#ffd37a', 18);
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// PHYSICS VECTORS (B, v, I)
+// ═══════════════════════════════════════════════════════════════
+function drawVectors(a, theta) {
+  if (!showVectors) return;
+  const e = coilEndpoints(a);
+
+  // B vector
+  drawArrow3D([MAG_N_FACE + 35, AY + 94, -126], [MAG_S_FACE - 35, AY + 94, -126], 'rgba(246,183,60,0.96)', 'B');
+
+  // Velocity vectors
+  const vLen = 74;
+  const vxA = Math.sin(a), vyA = -Math.cos(a);
+  const vxB = -vxA, vyB = -vyA;
+  drawArrow3D([e.axA, e.ayA, 18], [e.axA + vxA * vLen, e.ayA + vyA * vLen * 0.55, 18], 'rgba(115,230,255,0.96)', 'v');
+  drawArrow3D([e.axB, e.ayB, 18], [e.axB + vxB * vLen, e.ayB + vyB * vLen * 0.55, 18], 'rgba(115,230,255,0.96)', 'v');
+
+  // Current vectors
+  if (Math.abs(Math.sin(theta)) > 0.08) {
+    const dirA = currentDirectionFromCrossProduct(a, 'A');
+    const dirB = currentDirectionFromCrossProduct(a, 'B');
+    const iLen = 82;
+    if (dirA) drawArrow3D([e.axA, e.ayA, -dirA * iLen / 2], [e.axA, e.ayA, dirA * iLen / 2], 'rgba(114,223,137,0.96)', 'I');
+    if (dirB) drawArrow3D([e.axB, e.ayB, -dirB * iLen / 2], [e.axB, e.ayB, dirB * iLen / 2], 'rgba(114,223,137,0.96)', 'I');
+  }
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// SLIP RINGS & CARBON BRUSHES
+// ═══════════════════════════════════════════════════════════════
+function drawRing(zPos, R, label) {
+  const pts = [];
+  for (let i = 0; i <= 38; i++) {
+    const a = i / 38 * Math.PI * 2;
+    pts.push(proj(COIL_CX + R * Math.cos(a), AY + R * Math.sin(a) * 0.55, zPos));
+  }
+  G.lineCap = 'round';
+  G.lineWidth = 11;
+  G.strokeStyle = '#7a510f';
+  G.beginPath();
+  G.moveTo(pts[0].x, pts[0].y);
+  pts.forEach(p => G.lineTo(p.x, p.y));
+  G.stroke();
+  G.lineWidth = 5.5;
+  G.strokeStyle = '#f4c95c';
+  G.beginPath();
+  G.moveTo(pts[0].x, pts[0].y);
+  pts.forEach(p => G.lineTo(p.x, p.y));
+  G.stroke();
+  if (label) drawLabel(i18n[currentLang].slipRings, proj(COIL_CX - R - 75, AY - 20, (RING_A_Z + RING_B_Z) / 2), '#ffe790', 17);
+}
+
+function getBrushExitPin3D(zPos, R) {
+  const bx = COIL_CX + R + 16;
+  return [bx + BRUSH_BW + BRUSH_EXT, AY, zPos];
+}
+
+function drawBrush(zPos, R, label) {
+  const bx = COIL_CX + R + 16;
+  const bw = BRUSH_BW, bh = BRUSH_BH, bd = 15;
+  drawFace([[bx-bw,AY+bh,zPos-bd],[bx+bw,AY+bh,zPos-bd],[bx+bw,AY+bh,zPos+bd],[bx-bw,AY+bh,zPos+bd]], '#6b6b6b', '#252525');
+  drawFace([[bx-bw,AY-bh,zPos+bd],[bx+bw,AY-bh,zPos+bd],[bx+bw,AY+bh,zPos+bd],[bx-bw,AY+bh,zPos+bd]], '#4f4f4f', '#202020');
+  drawFace([[bx+bw,AY-bh,zPos-bd],[bx+bw,AY-bh,zPos+bd],[bx+bw,AY+bh,zPos+bd],[bx+bw,AY+bh,zPos-bd]], '#383838', '#1c1c1c');
+  const pin = getBrushExitPin3D(zPos, R);
+  drawLine3([[bx + bw, AY, zPos], pin], '#7890a5', 3);
+  const pp = proj(...pin);
+  G.fillStyle = '#ffd56a';
+  G.shadowColor = '#ffd56a';
+  G.shadowBlur = 8;
+  G.beginPath();
+  G.arc(pp.x, pp.y, 4.5, 0, Math.PI * 2);
+  G.fill();
+  G.shadowBlur = 0;
+  if (label) drawLabel(i18n[currentLang].brushes, proj(bx + bw + 54, AY - bh + 2, (RING_A_Z + RING_B_Z) / 2), '#c8e0ff', 17);
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// LIGHTBULB LOAD
+// ═══════════════════════════════════════════════════════════════
+const bulbAnchors = { sideX: 0, sideY: 0, tipX: 0, tipY: 0 };
+
+function drawBulb(theta, B, omega) {
+  const maxVoltage = peakEmf(physics.maxB, physics.maxOmega);
+  const instantaneous = Math.abs(emfAt(theta, B, omega)) / maxVoltage;
+  const averageGlow = Math.min(1, peakEmf(B, omega) / maxVoltage * 0.78 + 0.08);
+  const highSpeedBlend = Math.max(0, Math.min(1, (omega - 4) / 5));
+  const target = instantaneous * (1 - highSpeedBlend) + averageGlow * highSpeedBlend;
+  let bright;
+  if (highSpeedBlend < 0.05) {
+    bulbMemory = target;
+    bright = target;
+  } else {
+    bulbMemory += (target - bulbMemory) * 0.08;
+    bright = Math.max(0, Math.min(1, bulbMemory));
+  }
+
+  const sp = proj(BULB_X, AY + 8, BULB_Z);
+  const cx = sp.x, globeY = sp.y - 48;
+  const r = 42;
+  const baseW = 18, baseH = 38;
+  const baseTop = globeY + r - 3;
+  const baseBot = baseTop + baseH;
+  const tipY = baseBot + 10;
+  bulbAnchors.sideX = cx - baseW - 1;
+  bulbAnchors.sideY = baseTop + baseH * 0.45;
+  bulbAnchors.tipX  = cx;
+  bulbAnchors.tipY  = tipY + 1;
+
+  // Outer glow — clipped to upper hemisphere to prevent yellow bleed below
+  if (bright > 0.02) {
+    const gr = r + 32 + bright * 86;
+    G.save();
+    // Clip region: only allow glow above the metal base top
+    G.beginPath();
+    G.rect(0, 0, W, baseTop + 2);
+    G.clip();
+    const glow = G.createRadialGradient(cx, globeY, r * 0.12, cx, globeY, gr);
+    glow.addColorStop(0, 'rgba(255,255,210,' + Math.min(0.92, bright).toFixed(3) + ')');
+    glow.addColorStop(0.35, 'rgba(255,205,58,' + (bright * 0.58).toFixed(3) + ')');
+    glow.addColorStop(1, 'rgba(255,150,0,0)');
+    G.fillStyle = glow;
+    G.beginPath();
+    G.arc(cx, globeY, gr, 0, Math.PI * 2);
+    G.fill();
+    G.restore();
+  }
+
+  // Metal base
+  const metal = G.createLinearGradient(cx - baseW, 0, cx + baseW, 0);
+  metal.addColorStop(0, '#2c2c2c');
+  metal.addColorStop(0.22, '#777');
+  metal.addColorStop(0.55, '#aaa');
+  metal.addColorStop(1, '#2c2c2c');
+  G.fillStyle = metal;
+  G.fillRect(cx - baseW, baseTop, baseW * 2, baseH);
+  G.strokeStyle = 'rgba(0,0,0,0.38)';
+  G.lineWidth = 1.1;
+  for (let i = 0; i < 6; i++) {
+    const y = baseTop + 4 + i * 5;
+    G.beginPath();
+    G.moveTo(cx - baseW + 1, y);
+    G.lineTo(cx + baseW - 1, y);
+    G.stroke();
+  }
+  G.fillStyle = '#161616';
+  G.beginPath();
+  G.moveTo(cx - 6, baseBot);
+  G.lineTo(cx, tipY + 1);
+  G.lineTo(cx + 6, baseBot);
+  G.closePath();
+  G.fill();
+
+  // Glass globe
+  G.beginPath();
+  G.arc(cx, globeY, r, 0, Math.PI * 2);
+  const glass = G.createRadialGradient(cx - 12, globeY - 14, 2, cx, globeY, r);
+  if (bright > 0.02) {
+    glass.addColorStop(0, '#ffffff');
+    glass.addColorStop(0.34, 'rgba(255,245,170,0.98)');
+    glass.addColorStop(1, 'rgba(245,150,25,0.86)');
+  } else {
+    glass.addColorStop(0, 'rgba(245,248,255,0.94)');
+    glass.addColorStop(0.6, 'rgba(200,208,222,0.86)');
+    glass.addColorStop(1, 'rgba(150,160,180,0.75)');
+  }
+  G.fillStyle = glass;
+  G.fill();
+  G.strokeStyle = bright > 0.02 ? 'rgba(255,218,93,0.62)' : 'rgba(150,160,180,0.62)';
+  G.lineWidth = 1.5;
+  G.stroke();
+
+  // Filament
+  G.save();
+  G.strokeStyle = bright > 0.02 ? 'rgba(255,244,95,0.96)' : 'rgba(95,98,108,0.45)';
+  G.lineWidth = bright > 0.02 ? 2.3 : 1.4;
+  G.shadowColor = 'rgba(255,214,75,' + bright.toFixed(3) + ')';
+  G.shadowBlur = bright * 22;
+  const fy = globeY + 9, fw = 9;
+  G.beginPath();
+  G.moveTo(cx - fw, fy + 9);
+  G.lineTo(cx - fw / 2, fy - 7);
+  G.lineTo(cx, fy + 9);
+  G.lineTo(cx + fw / 2, fy - 7);
+  G.lineTo(cx + fw, fy + 9);
+  G.stroke();
+  G.restore();
+
+  drawLabel(i18n[currentLang].bulb, { x: cx, y: globeY - r - 12 }, '#f4f7fb', 17);
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// EXTERNAL CIRCUIT WIRES & MOVING CHARGES
+// ═══════════════════════════════════════════════════════════════
+function drawWires(theta, B, omega, resistance) {
+  const current = currentAt(theta, B, omega, resistance);
+  const alpha = Math.min(1, Math.abs(current) / 2.5);
+  const sign = Math.sign(current);
+  const pinA = proj(...getBrushExitPin3D(RING_A_Z, RING_R_A));
+  const pinB = proj(...getBrushExitPin3D(RING_B_Z, RING_R_B));
+  G.lineCap = 'round';
+  G.lineJoin = 'round';
+  G.strokeStyle = '#24445b';
+  G.lineWidth = 4;
+  G.beginPath(); G.moveTo(pinA.x, pinA.y); G.lineTo(bulbAnchors.sideX, bulbAnchors.sideY); G.stroke();
+  G.strokeStyle = '#551c3e';
+  G.beginPath(); G.moveTo(pinB.x, pinB.y); G.lineTo(bulbAnchors.tipX, bulbAnchors.tipY); G.stroke();
+  if (alpha > 0.02 && sign !== 0) {
+    const cyan    = 'rgba(57,216,255,'  + (0.35 + alpha * 0.65).toFixed(3) + ')';
+    const magenta = 'rgba(255,79,216,'  + (0.35 + alpha * 0.65).toFixed(3) + ')';
+    G.strokeStyle = cyan;
+    G.lineWidth = 3;
+    G.beginPath(); G.moveTo(pinA.x, pinA.y); G.lineTo(bulbAnchors.sideX, bulbAnchors.sideY); G.stroke();
+    G.strokeStyle = magenta;
+    G.beginPath(); G.moveTo(pinB.x, pinB.y); G.lineTo(bulbAnchors.tipX, bulbAnchors.tipY); G.stroke();
+    drawMovingCharges(pinA.x, pinA.y, bulbAnchors.sideX, bulbAnchors.sideY, sign, cyan, alpha);
+    drawMovingCharges(pinB.x, pinB.y, bulbAnchors.tipX, bulbAnchors.tipY, -sign, magenta, alpha);
+  }
+}
+
+function drawMovingCharges(x1, y1, x2, y2, dir, color, alpha) {
+  G.fillStyle = color;
+  G.shadowColor = color;
+  G.shadowBlur = 9;
+  for (let i = 0; i < 6; i++) {
+    let t = (i / 6 + chargePhase * dir) % 1;
+    if (t < 0) t += 1;
+    const x = x1 + (x2 - x1) * t;
+    const y = y1 + (y2 - y1) * t;
+    G.beginPath();
+    G.arc(x, y, 3.2 + alpha * 1.8, 0, Math.PI * 2);
+    G.fill();
+  }
+  G.shadowBlur = 0;
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// FULL SCENE COMPOSITION
+// ═══════════════════════════════════════════════════════════════
+function drawScene(theta, B, omega, resistance, thickness) {
+  const a = coilAngleFromPhase(theta);
+  G.clearRect(0, 0, W, H);
+  drawBG();
+  drawMagnet(true);
+  drawMagnet(false);
+  drawFieldLines(B);
+  drawCoil(a, theta, B, omega, thickness);
+  drawVectors(a, theta);
+  drawRing(RING_A_Z, RING_R_A, true);
+  drawRing(RING_B_Z, RING_R_B, false);
+  drawBrush(RING_A_Z, RING_R_A, true);
+  drawBrush(RING_B_Z, RING_R_B, false);
+  drawBulb(theta, B, omega);
+  drawWires(theta, B, omega, resistance);
+
+  // Rotation axis
+  const axisA = proj(COIL_CX, AY, COIL_HZ_BACK - 24);
+  const axisB = proj(COIL_CX, AY, COIL_HZ_OPEN + 24);
+  G.strokeStyle = 'rgba(120,170,255,0.34)';
+  G.lineWidth = 1.2;
+  G.setLineDash([5, 5]);
+  G.beginPath(); G.moveTo(axisA.x, axisA.y); G.lineTo(axisB.x, axisB.y); G.stroke();
+  G.setLineDash([]);
+  drawLabel(i18n[currentLang].rotAxis, proj(COIL_CX, AY - 10, COIL_HZ_BACK - 28), '#9ec0ff', 13, 0.38);
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// GRAPH RENDERING
+// ═══════════════════════════════════════════════════════════════
+function drawGraph(ctx, title, unit, color, theta, B, omega, resistance, scale, valueFn) {
+  ctx.clearRect(0, 0, GW, GH);
+  const bg = ctx.createLinearGradient(0, 0, 0, GH);
+  bg.addColorStop(0, '#121820');
+  bg.addColorStop(1, '#0d1218');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, GW, GH);
+
+  // Expanded margins for labels
+  const px = 120, py = 45, pw = 840, ph = 180;
+  const zeroY = py + ph / 2;
+  const sx = pw / (Math.PI * 2);
+  const sy = (ph * 0.44) / scale;
+  const thetaN = normalizePhase(theta);
+  const current = valueFn(theta, B, omega, resistance);
+
+  // Grid lines
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 6; i++) {
+    const y = py + i * ph / 6;
+    ctx.beginPath(); ctx.moveTo(px, y); ctx.lineTo(px + pw, y); ctx.stroke();
+  }
+  for (let d = 0; d <= 360; d += 45) {
+    const x = px + d / 360 * pw;
+    ctx.beginPath(); ctx.moveTo(x, py); ctx.lineTo(x, py + ph); ctx.stroke();
+  }
+
+  // Axes
+  ctx.strokeStyle = 'rgba(235,240,245,0.50)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(px, zeroY); ctx.lineTo(px + pw, zeroY); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(px, py);    ctx.lineTo(px, py + ph);    ctx.stroke();
+
+  // Waveform
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  for (let i = 0; i <= 720; i++) {
+    const t = i / 720 * Math.PI * 2;
+    const x = px + t * sx;
+    const y = zeroY - valueFn(t, B, omega, resistance) * sy;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+
+  // Current position tracker
+  const tx = px + thetaN * sx;
+  const ty = zeroY - current * sy;
+  ctx.strokeStyle = 'rgba(96,165,250,0.45)';
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([6, 5]);
+  ctx.beginPath(); ctx.moveTo(tx, py); ctx.lineTo(tx, py + ph); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Tracker dot
+  ctx.fillStyle = '#60a5fa';
+  ctx.shadowColor = '#60a5fa';
+  ctx.shadowBlur = 15;
+  ctx.beginPath(); ctx.arc(tx, ty, 6, 0, Math.PI * 2); ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Labels
+  ctx.textBaseline = 'top';
+  ctx.fillStyle = '#edf3f8';
+  ctx.font = '800 16px Inter, Segoe UI';
+  ctx.textAlign = 'left';
+  ctx.fillText(title, px, py - 30);
+
+  ctx.font = '600 12px Inter, Segoe UI';
+  ctx.fillStyle = '#94a3b8';
+  ctx.textAlign = 'right';
+  ctx.fillText(i18n[currentLang].phaseEq, px + pw, py - 26);
+
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  [0, 90, 180, 270, 360].forEach(d => {
+    const x = px + d / 360 * pw;
+    ctx.fillText(d + '°', x, py + ph + 10);
+    ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+    ctx.beginPath(); ctx.moveTo(x, zeroY - 4); ctx.lineTo(x, zeroY + 4); ctx.stroke();
+  });
+
+  // Y-axis labels
+  ctx.fillStyle = '#94a3b8';
+  ctx.font = '500 12px JetBrains Mono, monospace';
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  [-scale, -scale / 2, 0, scale / 2, scale].forEach(v => {
+    const y = zeroY - v * sy;
+    ctx.fillText(v.toFixed(v === 0 ? 0 : 2) + ' ' + unit, px - 12, y);
+  });
+
+  ctx.save();
+  ctx.translate(24, py + ph / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = '700 13px Inter, Segoe UI';
+  ctx.fillText(unit === 'V' ? i18n[currentLang].voltEmf : i18n[currentLang].currentStr, 0, 0);
+  ctx.restore();
+
+  // Floating pill
+  const pill = 'θ ' + phaseDeg(theta).toFixed(0) + '° | ' + current.toFixed(2) + ' ' + unit;
+  ctx.font = '700 12px Inter, Segoe UI';
+  const tw = ctx.measureText(pill).width;
+  ctx.textBaseline = 'middle';
+  const bx = Math.min(GW - tw - 28, tx + 14);
+  const by = Math.max(py - 10, Math.min(py + ph - 28, ty - 28));
+  ctx.fillStyle = 'rgba(9,13,22,0.90)';
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(bx, by, tw + 18, 26, 6);
+  else ctx.rect(bx, by, tw + 18, 26);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  ctx.fillStyle = '#f1f5f9';
+  ctx.textAlign = 'left';
+  ctx.fillText(pill, bx + 9, by + 13);
+}
+
+function drawGraphs(theta, B, omega, resistance) {
+  const voltageScale = peakEmf(physics.maxB, physics.maxOmega);
+  const minResistance = resistanceFromThickness(5);
+  const currentScale  = peakEmf(physics.maxB, physics.maxOmega) / minResistance;
+  drawGraph(EG, i18n[currentLang].gEmf, 'V', 'rgba(251,191,36,0.90)', theta, B, omega, resistance, voltageScale, emfAt);
+  drawGraph(IG, i18n[currentLang].gCurrent, 'A', 'rgba(34,211,238,0.90)', theta, B, omega, resistance, currentScale, currentAt);
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// DASHBOARD & TELEMETRY UPDATES
+// ═══════════════════════════════════════════════════════════════
+function updateDashboard(theta, B, omega, thickness, resistance) {
+  const deg     = phaseDeg(theta);
+  const emf     = emfAt(theta, B, omega);
+  const current = currentAt(theta, B, omega, resistance);
+  const flux    = fluxLinkage(theta, B);
+  const e0      = peakEmf(B, omega);
+  const i0      = peakCurrent(B, omega, resistance);
+
+  omegaValue.textContent     = omega.toFixed(1) + ' rad/s';
+  fieldValue.textContent     = B.toFixed(2) + ' T';
+  thicknessValue.textContent = thickness.toFixed(1) + 'x';
+  phaseReadout.textContent   = deg.toFixed(0) + '°';
+  emfReadout.textContent     = emf.toFixed(2) + ' V';
+  currentReadout.textContent = current.toFixed(2) + ' A';
+  resistanceReadout.textContent = resistance.toFixed(2) + ' Ω';
+  fluxReadout.textContent    = flux.toFixed(3);
+  freqReadout.textContent    = frequencyFromOmega(omega).toFixed(2) + ' Hz';
+
+  const thetaDisplay = normalizePhase(theta).toFixed(2);
+  emfFormula.textContent     = 'ε = ' + e0.toFixed(2) + 'V · sin(' + thetaDisplay + ') = ' + emf.toFixed(2) + ' V';
+  peakFormula.textContent    = 'ε₀ = ' + physics.turns + ' · ' + B.toFixed(2) + 'T · ' + physics.area.toFixed(3) + 'm² · ' + omega.toFixed(1) + ' = ' + e0.toFixed(2) + ' V';
+  peakCurrentFormula.textContent = 'I₀ = ' + e0.toFixed(2) + 'V / ' + resistance.toFixed(2) + 'Ω = ' + i0.toFixed(2) + ' A';
+  currentFormula.textContent = 'I = ' + i0.toFixed(2) + 'A · sin(' + thetaDisplay + ') = ' + current.toFixed(2) + ' A';
+
+  updatePhasePath(theta);
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// PHASE PATH TIMELINE UPDATE
+// ═══════════════════════════════════════════════════════════════
+function updatePhasePath(theta) {
+  const deg = phaseDeg(theta);
+  const nearest = nearestMilestone(deg);
+
+  phaseNodes.forEach(n => {
+    const target = +n.dataset.target;
+    const isActive = nearest.target === (target === 360 ? 0 : target) && nearest.distance <= 15;
+    n.classList.toggle('active', isActive);
+    
+    if (isActive && nodeDescriptions[target]) {
+      phaseDesc.textContent = nodeDescriptions[target];
+    }
+  });
+}
+
+function nearestMilestone(deg) {
+  const targets = [0, 90, 180, 270, 360];
+  let best = { target: 0, distance: Infinity };
+  targets.forEach(target => {
+    const d = Math.abs(((deg - target + 540) % 360) - 180);
+    if (d < best.distance) best = { target: target === 360 ? 0 : target, distance: d };
+  });
+  return best;
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// AUTO-PAUSE LOGIC
+// ═══════════════════════════════════════════════════════════════
+function findMilestoneCrossing(from, to) {
+  const step = Math.PI / 2;
+  const start = Math.floor(from / step) + 1;
+  const end   = Math.floor(to / step);
+  if (start <= end) return start * step;
+  return null;
+}
+
+function maybeAutoPause(from, candidate) {
+  if (!autoPauseToggle.checked || autoPaused) return candidate;
+  const hit = findMilestoneCrossing(from, candidate);
+  if (hit === null) return candidate;
+  autoPaused = true;
+  running = false;
+  runToggle.checked = false;
+  resumeButton.disabled = false;
+  updateCursor();
+  return hit;
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// TOUCH & MOUSE INTERACTION — Manual coil dragging
+// ═══════════════════════════════════════════════════════════════
+function getCanvasPos(e) {
+  const rect = CV.getBoundingClientRect();
+  const scaleX = W / rect.width, scaleY = H / rect.height;
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
+}
+
+function isNearCoil(mx, my) {
+  const e = coilEndpoints(coilAngleFromPhase(phase));
+  const pA = proj(e.axA, e.ayA, 0);
+  const pB = proj(e.axB, e.ayB, 0);
+  const c  = proj(COIL_CX, AY, 0);
+  return Math.hypot(mx - pA.x, my - pA.y) < 70 ||
+         Math.hypot(mx - pB.x, my - pB.y) < 70 ||
+         Math.hypot(mx - c.x,  my - c.y)  < 110;
+}
+
+function updateCursor() {
+  if (!running) CV.classList.add('can-drag');
+  else {
+    CV.classList.remove('can-drag');
+    CV.classList.remove('dragging');
+  }
+}
+
+// Mouse events
+CV.addEventListener('mousedown', e => {
+  if (running) return;
+  const pos = getCanvasPos(e);
+  if (isNearCoil(pos.x, pos.y)) {
+    isDragging = true;
+    dragStartX = pos.x;
+    dragStartPhase = phase;
+    CV.classList.add('dragging');
+    CV.classList.remove('can-drag');
+  }
+});
+
+CV.addEventListener('mousemove', e => {
+  if (running) return;
+  const pos = getCanvasPos(e);
+  if (isDragging) {
+    autoPaused = false;
+    resumeButton.disabled = true;
+    phase = dragStartPhase + (pos.x - dragStartX) * 0.020;
+  } else if (isNearCoil(pos.x, pos.y)) {
+    CV.classList.add('can-drag');
+  } else {
+    CV.classList.remove('can-drag');
+  }
+});
+
+CV.addEventListener('mouseup', () => {
+  if (isDragging) {
+    isDragging = false;
+    CV.classList.remove('dragging');
+    if (!running) CV.classList.add('can-drag');
+  }
+});
+
+CV.addEventListener('mouseleave', () => {
+  if (isDragging) {
+    isDragging = false;
+    CV.classList.remove('dragging');
+  }
+});
+
+// Touch events — prevent page scroll while interacting with canvas
+CV.addEventListener('touchstart', e => {
+  if (running) return;
+  e.preventDefault();
+  const pos = getCanvasPos(e);
+  if (isNearCoil(pos.x, pos.y)) {
+    isDragging = true;
+    dragStartX = pos.x;
+    dragStartPhase = phase;
+  }
+}, { passive: false });
+
+CV.addEventListener('touchmove', e => {
+  if (!isDragging) return;
+  e.preventDefault();
+  const pos = getCanvasPos(e);
+  autoPaused = false;
+  resumeButton.disabled = true;
+  phase = dragStartPhase + (pos.x - dragStartX) * 0.020;
+}, { passive: false });
+
+CV.addEventListener('touchend', () => { isDragging = false; });
+
+
+// ═══════════════════════════════════════════════════════════════
+// QUIZ SYSTEM
+// ═══════════════════════════════════════════════════════════════
+function renderQuiz() {
+  const quizQuestions = i18n[currentLang].q;
+  quizList.innerHTML = quizQuestions.map((q, qi) => {
+    const options = q.o.map((opt, oi) =>
+      '<button class="quiz-option" type="button" data-q="' + qi + '" data-option="' + oi + '">' + opt + '</button>'
+    ).join('');
+    return '<article class="quiz-card">' +
+      '<div class="quiz-question">' + (qi + 1) + '. ' + q.q + '</div>' +
+      '<div class="quiz-options">' + options + '</div>' +
+      '<div class="quiz-feedback"></div>' +
+      '</article>';
+  }).join('');
+}
+
+function handleQuizOption(event) {
+  const button = event.target.closest('.quiz-option');
+  if (!button) return;
+  const qIndex   = +button.dataset.q;
+  const oIndex   = +button.dataset.option;
+  const quizQuestions = i18n[currentLang].q;
+  const question = quizQuestions[qIndex];
+  const card     = button.closest('.quiz-card');
+  const feedback = card.querySelector('.quiz-feedback');
+
+  card.querySelectorAll('.quiz-option').forEach(opt => opt.classList.remove('correct', 'incorrect'));
+
+  // Assume correct is always 0 based on original data struct
+  const correctOption = 0;
+  const correct   = card.querySelector('[data-option="' + correctOption + '"]');
+  const isCorrect = oIndex === correctOption;
+  button.classList.add(isCorrect ? 'correct' : 'incorrect');
+  if (!isCorrect) correct.classList.add('correct');
+  feedback.className   = 'quiz-feedback ' + (isCorrect ? 'correct' : 'incorrect');
+  feedback.textContent = (isCorrect ? i18n[currentLang].corr : i18n[currentLang].incorr) + question.e;
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// MAIN ANIMATION LOOP
+// ═══════════════════════════════════════════════════════════════
+function loop(ts) {
+  const dt = Math.min((ts - lastT) / 1000, 0.05);
+  lastT = ts;
+
+  const omega     = getOmega();
+  const B         = getB();
+  const thickness = getThickness();
+  const resistance = resistanceFromThickness(thickness);
+
+  if (running && omega > 0) {
+    const next = phase + omega * dt;
+    phase = maybeAutoPause(phase, next);
+    chargePhase = (chargePhase + dt * omega * 0.08) % 1;
+  } else if (isDragging) {
+    chargePhase = normalizePhase(phase) / (Math.PI * 2);
+  }
+
+  const theta = phase;
+  drawScene(theta, B, omega, resistance, thickness);
+  drawGraphs(theta, B, omega, resistance);
+  updateDashboard(theta, B, omega, thickness, resistance);
+
+  requestAnimationFrame(loop);
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// INITIALIZATION
+// ═══════════════════════════════════════════════════════════════
+applyLang();
+
+// Support direct quiz link
+if (location.hash.slice(1) === 'quiz') {
+  tabBtns.forEach(b => {
+    b.classList.toggle('active', b.dataset.view === 'quiz');
+    b.setAttribute('aria-selected', b.dataset.view === 'quiz');
+  });
+  simView.classList.add('hidden');
+  quizView.classList.add('active');
+}
+
+updateCursor();
+
+requestAnimationFrame(t => {
+  lastT = t;
+  loop(t);
+});
+</script>
+</body>
+</html>
